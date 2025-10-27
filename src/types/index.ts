@@ -1,12 +1,14 @@
 export interface User {
   id: string;
-  name: string;
   email: string;
-  role: 'buyer' | 'seller' | 'both';
-  status: 'active' | 'pending' | 'blocked';
-  avatar?: string;
-  createdAt: string;
-  transactionCount: number;
+  fullName: string;
+  displayName: string | null;
+  phone: string;
+  avatarUrl: string;
+  bio: string | null;
+  address: string;
+  role: 'Admin' | 'User' | 'Staff';
+  isActive: boolean;
 }
 
 export interface Listing {

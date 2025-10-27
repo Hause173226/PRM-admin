@@ -3,11 +3,11 @@ import { LayoutDashboard, Users, FileText, Receipt, DollarSign, BarChart3 } from
 
 const menuItems = [
   { path: '/dashboard', icon: LayoutDashboard, label: 'Trang chủ' },
-  { path: '/users', icon: Users, label: 'Người dùng' },
-  { path: '/listings', icon: FileText, label: 'Tin đăng' },
-  { path: '/transactions', icon: Receipt, label: 'Giao dịch' },
-  { path: '/fees', icon: DollarSign, label: 'Phí & Hoa hồng' },
-  { path: '/reports', icon: BarChart3, label: 'Báo cáo' }
+  { path: '/users', icon: Users, label: 'Quản lý Người dùng' },
+  { path: '/listings', icon: FileText, label: 'Quản lý Tin đăng' },
+  { path: '/transactions', icon: Receipt, label: 'Quản lý Giao dịch' },
+  { path: '/fees', icon: DollarSign, label: 'Quản lý Phí & Hoa hồng' },
+  { path: '/reports', icon: BarChart3, label: 'Quản lý Báo cáo' }
 ];
 
 export default function Sidebar() {
