@@ -1,15 +1,41 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Bell, LogOut, User, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import authService from '../services/authService';
+import { AuthUser } from '../types/auth';
 
 export default function Topbar() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    setShowLogoutModal(false);
-    navigate('/login');
+  useEffect(() => {
+    // Lấy thông tin user từ localStorage
+    const user = authService.getCurrentUser();
+    setCurrentUser(user);
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      // Gọi API logout
+      await authService.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      // Luôn chuyển về trang login dù API có lỗi
+      setShowLogoutModal(false);
+      navigate('/login');
+    }
+  };
+
+  // Lấy initials từ fullName
+  const getInitials = (name: string) => {
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return parts[0][0] + parts[parts.length - 1][0];
+    }
+    return name.substring(0, 2);
   };
 
   return (
@@ -38,14 +64,29 @@ export default function Topbar() {
                 onClick={() => setShowDropdown(!showDropdown)}
                 className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-xl transition-colors"
               >
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">AD</span>
-                </div>
+                {currentUser?.avatarUrl ? (
+                  <img 
+                    src={currentUser.avatarUrl} 
+                    alt={currentUser.fullName}
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-medium">
+                      {currentUser?.fullName ? getInitials(currentUser.fullName) : 'AD'}
+                    </span>
+                  </div>
+                )}
               </button>
 
               {showDropdown && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-2">
-                  <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 py-2">
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <p className="text-sm font-semibold text-gray-900">{currentUser?.fullName || 'User'}</p>
+                    <p className="text-xs text-gray-500">{currentUser?.email || ''}</p>
+                    <p className="text-xs text-blue-600 mt-1">{currentUser?.role || ''}</p>
+                  </div>
+                  <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 mt-1">
                     <User size={16} />
                     Hồ sơ cá nhân
                   </button>

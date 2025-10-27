@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import Layout from '../components/Layout';
 import { Save, History } from 'lucide-react';
-import { mockFees } from '../data/mockData';
 import { FeeConfig } from '../types';
 
 export default function Fees() {
-  const [fees, setFees] = useState<FeeConfig[]>(mockFees);
+  const [fees, setFees] = useState<FeeConfig[]>([]);
   const [showSuccess, setShowSuccess] = useState(false);
 
   const handleUpdateFee = (id: string, newPercentage: number) => {
