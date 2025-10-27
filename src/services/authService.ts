@@ -14,15 +14,35 @@ class AuthService {
    * POST /api/auth/login
    */
   async login(data: LoginRequest): Promise<LoginResponse> {
-    const response = await api.post<LoginResponse>('/api/auth/login', data);
-    
-    // Lưu token và thông tin user vào localStorage
-    const { tokens, user } = response.data;
-    localStorage.setItem('accessToken', tokens.accessToken);
-    localStorage.setItem('refreshToken', tokens.refreshToken);
-    localStorage.setItem('user', JSON.stringify(user));
-    
-    return response.data;
+    try {
+      const response = await api.post<LoginResponse>('/api/auth/login', data);
+      
+      // Kiểm tra response data
+      if (!response.data || !response.data.tokens || !response.data.user) {
+        throw new Error('Invalid response format from server');
+      }
+      
+      // Lưu token và thông tin user vào localStorage
+      const { tokens, user } = response.data;
+      
+      if (!tokens.accessToken || !tokens.refreshToken) {
+        throw new Error('Invalid tokens received from server');
+      }
+      
+      localStorage.setItem('accessToken', tokens.accessToken);
+      localStorage.setItem('refreshToken', tokens.refreshToken);
+      localStorage.setItem('user', JSON.stringify(user));
+      
+      return response.data;
+    } catch (error: any) {
+      // Xóa token cũ nếu có lỗi
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+      
+      // Re-throw error để component xử lý
+      throw error;
+    }
   }
 
   /**

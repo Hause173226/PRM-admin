@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import Layout from '../components/Layout';
 import { Eye, Download, AlertCircle } from 'lucide-react';
-import { mockTransactions } from '../data/mockData';
 import { Transaction } from '../types';
 
 export default function Transactions() {
-  const [transactions] = useState<Transaction[]>(mockTransactions);
+  const [transactions] = useState<Transaction[]>([]);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
   const getStatusBadge = (status: string) => {

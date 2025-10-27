@@ -1,6 +1,5 @@
 import Layout from '../components/Layout';
 import { Users, FileText, DollarSign, CheckCircle, Award, TrendingUp, TrendingDown } from 'lucide-react';
-import { mockStats, mockRevenueData, mockTransactions } from '../data/mockData';
 import { useState } from 'react';
 
 type TimeFilter = '7days' | '30days' | 'year';
@@ -20,7 +19,7 @@ export default function Dashboard() {
     {
       icon: Users,
       label: 'Người dùng',
-      value: formatNumber(mockStats.totalUsers),
+      value: '0',
       change: '+12%',
       isPositive: true,
       color: 'blue'
@@ -28,7 +27,7 @@ export default function Dashboard() {
     {
       icon: FileText,
       label: 'Tin đăng',
-      value: formatNumber(mockStats.totalListings),
+      value: '0',
       change: '+8%',
       isPositive: true,
       color: 'green'
@@ -36,7 +35,7 @@ export default function Dashboard() {
     {
       icon: DollarSign,
       label: 'Doanh thu',
-      value: formatPrice(mockStats.revenue),
+      value: formatPrice(0),
       change: '+15%',
       isPositive: true,
       color: 'purple'
@@ -44,7 +43,7 @@ export default function Dashboard() {
     {
       icon: CheckCircle,
       label: 'GD thành công',
-      value: formatNumber(mockStats.completedTransactions),
+      value: '0',
       change: '+5%',
       isPositive: true,
       color: 'orange'
@@ -109,22 +108,8 @@ export default function Dashboard() {
                 ))}
               </div>
             </div>
-            <div className="h-64 flex items-end justify-between gap-2">
-              {mockRevenueData.map((data, index) => {
-                const maxRevenue = Math.max(...mockRevenueData.map(d => d.revenue));
-                const height = (data.revenue / maxRevenue) * 100;
-                return (
-                  <div key={index} className="flex-1 flex flex-col items-center gap-2">
-                    <div className="w-full bg-gray-100 rounded-t-lg relative group cursor-pointer hover:bg-blue-50 transition-colors" style={{ height: `${height}%` }}>
-                      <div className="absolute inset-0 bg-blue-600 rounded-t-lg" style={{ height: '100%' }}></div>
-                      <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                        {formatPrice(data.revenue)}
-                      </div>
-                    </div>
-                    <span className="text-xs text-gray-600">{data.date}</span>
-                  </div>
-                );
-              })}
+            <div className="h-64 flex items-center justify-center">
+              <p className="text-gray-400">Chưa có dữ liệu doanh thu</p>
             </div>
           </div>
 
@@ -163,7 +148,7 @@ export default function Dashboard() {
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center">
-                    <p className="text-3xl font-bold text-gray-900">{mockStats.totalListings}</p>
+                    <p className="text-3xl font-bold text-gray-900">0</p>
                     <p className="text-sm text-gray-600">Tổng tin</p>
                   </div>
                 </div>
@@ -186,19 +171,8 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-6">Giao dịch gần nhất</h2>
-            <div className="space-y-4">
-              {mockTransactions.slice(0, 5).map((transaction) => (
-                <div key={transaction.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
-                  <div>
-                    <p className="font-medium text-gray-900">{transaction.product.name}</p>
-                    <p className="text-sm text-gray-600">{transaction.buyer.name}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-gray-900">{formatPrice(transaction.amount)}</p>
-                    <p className="text-xs text-gray-600">{transaction.createdAt}</p>
-                  </div>
-                </div>
-              ))}
+            <div className="flex items-center justify-center py-8">
+              <p className="text-gray-400">Chưa có giao dịch nào</p>
             </div>
           </div>
 
@@ -211,14 +185,12 @@ export default function Dashboard() {
               <div className="inline-flex w-24 h-24 bg-blue-100 rounded-full items-center justify-center mb-4">
                 <Award className="text-blue-600" size={48} />
               </div>
-              <p className="text-4xl font-bold text-gray-900 mb-2">{mockStats.certifiedListings}</p>
+              <p className="text-4xl font-bold text-gray-900 mb-2">0</p>
               <p className="text-gray-600">Tin đăng đã được kiểm định chất lượng</p>
               <div className="mt-6 pt-6 border-t border-gray-200">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Tỷ lệ kiểm định</span>
-                  <span className="font-semibold text-blue-600">
-                    {Math.round((mockStats.certifiedListings / mockStats.totalListings) * 100)}%
-                  </span>
+                  <span className="font-semibold text-blue-600">0%</span>
                 </div>
               </div>
             </div>

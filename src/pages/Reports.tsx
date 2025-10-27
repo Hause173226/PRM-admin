@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import Layout from '../components/Layout';
 import { Download, TrendingUp } from 'lucide-react';
-import { mockStats, mockRevenueData } from '../data/mockData';
 
 type TimeFilter = '7days' | '30days' | 'year';
 type ExportFormat = 'csv' | 'pdf';
@@ -68,7 +67,7 @@ export default function Reports() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
             <p className="text-sm text-gray-600 mb-2">Người dùng</p>
-            <p className="text-3xl font-bold text-gray-900 mb-2">{formatNumber(mockStats.totalUsers)}</p>
+            <p className="text-3xl font-bold text-gray-900 mb-2">0</p>
             <div className="flex items-center gap-1 text-sm text-green-600">
               <TrendingUp size={16} />
               <span>+12%</span>
@@ -76,7 +75,7 @@ export default function Reports() {
           </div>
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
             <p className="text-sm text-gray-600 mb-2">Tin đăng</p>
-            <p className="text-3xl font-bold text-gray-900 mb-2">{formatNumber(mockStats.totalListings)}</p>
+            <p className="text-3xl font-bold text-gray-900 mb-2">0</p>
             <div className="flex items-center gap-1 text-sm text-green-600">
               <TrendingUp size={16} />
               <span>+8%</span>
@@ -84,7 +83,7 @@ export default function Reports() {
           </div>
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
             <p className="text-sm text-gray-600 mb-2">Doanh thu</p>
-            <p className="text-2xl font-bold text-gray-900 mb-2">{formatPrice(mockStats.revenue)}</p>
+            <p className="text-2xl font-bold text-gray-900 mb-2">{formatPrice(0)}</p>
             <div className="flex items-center gap-1 text-sm text-green-600">
               <TrendingUp size={16} />
               <span>+15%</span>
@@ -92,7 +91,7 @@ export default function Reports() {
           </div>
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
             <p className="text-sm text-gray-600 mb-2">GD thành công</p>
-            <p className="text-3xl font-bold text-gray-900 mb-2">{formatNumber(mockStats.completedTransactions)}</p>
+            <p className="text-3xl font-bold text-gray-900 mb-2">0</p>
             <div className="flex items-center gap-1 text-sm text-green-600">
               <TrendingUp size={16} />
               <span>+5%</span>
@@ -100,7 +99,7 @@ export default function Reports() {
           </div>
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
             <p className="text-sm text-gray-600 mb-2">Tin kiểm định</p>
-            <p className="text-3xl font-bold text-gray-900 mb-2">{formatNumber(mockStats.certifiedListings)}</p>
+            <p className="text-3xl font-bold text-gray-900 mb-2">0</p>
             <div className="flex items-center gap-1 text-sm text-green-600">
               <TrendingUp size={16} />
               <span>+10%</span>
@@ -110,23 +109,8 @@ export default function Reports() {
 
         <div className="bg-white rounded-2xl border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-6">Biểu đồ doanh thu</h2>
-          <div className="h-80 flex items-end justify-between gap-3">
-            {mockRevenueData.map((data, index) => {
-              const maxRevenue = Math.max(...mockRevenueData.map(d => d.revenue));
-              const height = (data.revenue / maxRevenue) * 100;
-              return (
-                <div key={index} className="flex-1 flex flex-col items-center gap-3">
-                  <div className="w-full bg-gray-100 rounded-t-xl relative group cursor-pointer hover:bg-blue-50 transition-colors" style={{ height: `${height}%`, minHeight: '40px' }}>
-                    <div className="absolute inset-0 bg-gradient-to-t from-blue-600 to-blue-400 rounded-t-xl"></div>
-                    <div className="absolute -top-16 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-sm px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg">
-                      <div className="font-semibold">{formatPrice(data.revenue)}</div>
-                      <div className="text-xs text-gray-300">{data.date}</div>
-                    </div>
-                  </div>
-                  <span className="text-sm text-gray-600 font-medium">{data.date}</span>
-                </div>
-              );
-            })}
+          <div className="h-80 flex items-center justify-center">
+            <p className="text-gray-400">Chưa có dữ liệu doanh thu</p>
           </div>
         </div>
 

@@ -1,10 +1,15 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, FileText, Receipt, DollarSign, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Receipt, DollarSign, BarChart3, Package, ShoppingCart, Shield, MessageSquare, Image } from 'lucide-react';
 
 const menuItems = [
   { path: '/dashboard', icon: LayoutDashboard, label: 'Trang chủ' },
   { path: '/users', icon: Users, label: 'Quản lý Người dùng' },
   { path: '/listings', icon: FileText, label: 'Quản lý Tin đăng' },
+  { path: '/products', icon: Package, label: 'Quản lý Sản phẩm' },
+  { path: '/orders', icon: ShoppingCart, label: 'Quản lý Đơn hàng' },
+  { path: '/escrows', icon: Shield, label: 'Quản lý Escrow' },
+  { path: '/chats', icon: MessageSquare, label: 'Quản lý Chat' },
+  { path: '/media', icon: Image, label: 'Quản lý Media' },
   { path: '/transactions', icon: Receipt, label: 'Quản lý Giao dịch' },
   { path: '/fees', icon: DollarSign, label: 'Quản lý Phí & Hoa hồng' },
   { path: '/reports', icon: BarChart3, label: 'Quản lý Báo cáo' }

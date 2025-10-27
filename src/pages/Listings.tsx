@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import Layout from '../components/Layout';
 import { Search, Eye, CheckCircle, XCircle, Award, Flag } from 'lucide-react';
-import { mockListings } from '../data/mockData';
 import { Listing } from '../types';
 
 type FilterStatus = 'all' | 'pending' | 'approved' | 'rejected' | 'spam';
 
 export default function Listings() {
-  const [listings] = useState<Listing[]>(mockListings);
+  const [listings] = useState<Listing[]>([]);
   const [filter, setFilter] = useState<FilterStatus>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
