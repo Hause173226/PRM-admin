@@ -11,10 +11,14 @@ export interface Product {
   year: number;
   location: string;
   warranty: string;
-  status: 'Pending' | 'Approved' | 'Rejected' | 'Active' | 'Inactive' | 'Còn hàng' | 'Hết hàng';
+  status: 'Pending' | 'Published' | 'InTransaction' | 'Sold' | 'Expired' | 'Rejected';
+  soh: number | null; // State of Health
+  listingType: 'FixedPrice' | 'Auction';
   price: number;
   description?: string;
   images?: string[];
+  ownerId?: string;
+  rejectionReason?: string | null;
   seller?: {
     id: string;
     name: string;
@@ -34,18 +38,24 @@ export interface ProductFilters {
   status?: string;
   page?: number;
   pageSize?: number;
+  capacity?: string;
+  condition?: string;
+  year?: number;
+  minPrice?: number;
+  maxPrice?: number;
+  search?: string;
 }
 
 export interface ProductListResponse {
-  data: Product[];
+  items: Product[]; // API trả về 'items' thay vì 'data'
   total: number;
   page: number;
   pageSize: number;
-  totalPages: number;
+  totalPages?: number; // Optional vì API có thể không trả về
 }
 
 export interface UpdateProductStatusRequest {
-  status: 'Pending' | 'Approved' | 'Rejected' | 'Active' | 'Inactive';
+  status: 'Pending' | 'Published' | 'InTransaction' | 'Sold' | 'Expired' | 'Rejected';
   reason?: string;
 }
 
