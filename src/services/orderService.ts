@@ -3,8 +3,8 @@ import { Order, OrderResponse, UpdateOrderStatusRequest } from '../types/order';
 
 export const orderService = {
   // Get all orders with pagination
-  getAllOrders: async (page: number = 1, limit: number = 10): Promise<OrderResponse> => {
-    const response = await api.get(`/api/orders?page=${page}&limit=${limit}`);
+  getAllOrders: async (page: number = 1, pageSize: number = 10): Promise<OrderResponse> => {
+    const response = await api.get(`/api/orders?page=${page}&pageSize=${pageSize}`);
     return response.data;
   },
 

@@ -23,6 +23,10 @@ export default function Products() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('');
   const [selectedType, setSelectedType] = useState<string>('');
+  const [selectedBrand, setSelectedBrand] = useState<string>('');
+  const [selectedVoltage, setSelectedVoltage] = useState<string>('');
+  const [selectedLocation, setSelectedLocation] = useState<string>('');
+  const [selectedWarranty, setSelectedWarranty] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
@@ -31,11 +35,12 @@ export default function Products() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [newStatus, setNewStatus] = useState<string>('');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const pageSize = 10;
 
   useEffect(() => {
     fetchProducts();
-  }, [currentPage, selectedStatus, selectedType]);
+  }, [currentPage, selectedStatus, selectedType, selectedBrand, selectedVoltage, selectedLocation, selectedWarranty]);
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -45,20 +50,27 @@ export default function Products() {
         pageSize: pageSize,
       };
 
-      if (selectedStatus) {
-        filters.status = selectedStatus;
-      }
+      // Chỉ thêm filter khi có giá trị (không phải rỗng)
+      if (selectedStatus) filters.status = selectedStatus;
+      if (selectedType) filters.type = selectedType;
+      if (selectedBrand) filters.brand = selectedBrand;
+      if (selectedVoltage) filters.voltage = selectedVoltage;
+      if (selectedLocation) filters.location = selectedLocation;
+      if (selectedWarranty) filters.warranty = selectedWarranty;
 
-      if (selectedType) {
-        filters.type = selectedType;
-      }
-
+      console.log('📤 Fetching products with filters:', filters);
       const response = await getAllProducts(filters);
-      setProducts(response.data || []);
-      setTotalPages(response.totalPages || 1);
+      console.log('📥 API Response:', response);
+      
+      setProducts(response.items || []);
+      // Tính totalPages từ total và pageSize
+      const calculatedTotalPages = response.total > 0 
+        ? Math.ceil(response.total / response.pageSize) 
+        : 1;
+      setTotalPages(response.totalPages || calculatedTotalPages);
       setTotalProducts(response.total || 0);
     } catch (error) {
-      console.error('Error fetching products:', error);
+      console.error('❌ Error fetching products:', error);
       setProducts([]);
       setTotalPages(1);
       setTotalProducts(0);
@@ -115,7 +127,7 @@ export default function Products() {
 
     try {
       await updateProductStatus(selectedProduct.id, { 
-        status: newStatus as 'Pending' | 'Approved' | 'Rejected' | 'Active' | 'Inactive'
+        status: newStatus as 'Pending' | 'Published' | 'InTransaction' | 'Sold' | 'Expired' | 'Rejected'
       });
       setShowStatusModal(false);
       fetchProducts();
@@ -129,17 +141,25 @@ export default function Products() {
   const getStatusBadge = (status: string) => {
     const statusStyles = {
       Pending: 'bg-yellow-100 text-yellow-800',
-      Approved: 'bg-green-100 text-green-800',
+      Published: 'bg-green-100 text-green-800',
+      InTransaction: 'bg-blue-100 text-blue-800',
+      Sold: 'bg-purple-100 text-purple-800',
+      Expired: 'bg-gray-100 text-gray-800',
       Rejected: 'bg-red-100 text-red-800',
-      Active: 'bg-blue-100 text-blue-800',
-      Inactive: 'bg-gray-100 text-gray-800',
-      'Còn hàng': 'bg-green-100 text-green-800',
-      'Hết hàng': 'bg-red-100 text-red-800',
+    };
+
+    const statusLabels = {
+      Pending: 'Chờ duyệt',
+      Published: 'Đã đăng',
+      InTransaction: 'Đang giao dịch',
+      Sold: 'Đã bán',
+      Expired: 'Hết hạn',
+      Rejected: 'Từ chối',
     };
 
     return (
       <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusStyles[status as keyof typeof statusStyles] || 'bg-gray-100 text-gray-800'}`}>
-        {status}
+        {statusLabels[status as keyof typeof statusLabels] || status}
       </span>
     );
   };
@@ -176,7 +196,7 @@ export default function Products() {
 
         {/* Filters */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
               <input
@@ -200,10 +220,11 @@ export default function Products() {
               >
                 <option value="">Tất cả trạng thái</option>
                 <option value="Pending">Chờ duyệt</option>
-                <option value="Approved">Đã duyệt</option>
+                <option value="Published">Đã đăng</option>
+                <option value="InTransaction">Đang giao dịch</option>
+                <option value="Sold">Đã bán</option>
+                <option value="Expired">Hết hạn</option>
                 <option value="Rejected">Từ chối</option>
-                <option value="Active">Hoạt động</option>
-                <option value="Inactive">Không hoạt động</option>
               </select>
             </div>
 
@@ -223,6 +244,88 @@ export default function Products() {
               </select>
             </div>
           </div>
+
+          {/* Advanced Filters Toggle */}
+          <button
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-2"
+          >
+            <Filter size={16} />
+            {showAdvancedFilters ? 'Ẩn bộ lọc nâng cao' : 'Hiển thị bộ lọc nâng cao'}
+          </button>
+
+          {/* Advanced Filters */}
+          {showAdvancedFilters && (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4 pt-4 border-t border-gray-200">
+              <div className="relative">
+                <select
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
+                  value={selectedBrand}
+                  onChange={(e) => {
+                    setSelectedBrand(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                >
+                  <option value="">Tất cả thương hiệu</option>
+                  <option value="Samsung">Samsung</option>
+                  <option value="LG">LG</option>
+                  <option value="Panasonic">Panasonic</option>
+                  <option value="BYD">BYD</option>
+                  <option value="CATL">CATL</option>
+                </select>
+              </div>
+
+              <div className="relative">
+                <select
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
+                  value={selectedVoltage}
+                  onChange={(e) => {
+                    setSelectedVoltage(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                >
+                  <option value="">Tất cả điện áp</option>
+                  <option value="48V">48V</option>
+                  <option value="60V">60V</option>
+                  <option value="72V">72V</option>
+                </select>
+              </div>
+
+              <div className="relative">
+                <select
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
+                  value={selectedLocation}
+                  onChange={(e) => {
+                    setSelectedLocation(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                >
+                  <option value="">Tất cả vị trí</option>
+                  <option value="Hà Nội">Hà Nội</option>
+                  <option value="Hồ Chí Minh">Hồ Chí Minh</option>
+                  <option value="Đà Nẵng">Đà Nẵng</option>
+                  <option value="Hải Phòng">Hải Phòng</option>
+                </select>
+              </div>
+
+              <div className="relative">
+                <select
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
+                  value={selectedWarranty}
+                  onChange={(e) => {
+                    setSelectedWarranty(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                >
+                  <option value="">Tất cả bảo hành</option>
+                  <option value="3 tháng">3 tháng</option>
+                  <option value="6 tháng">6 tháng</option>
+                  <option value="12 tháng">12 tháng</option>
+                  <option value="24 tháng">24 tháng</option>
+                </select>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Products Table */}
@@ -432,10 +535,11 @@ export default function Products() {
                 onChange={(e) => setNewStatus(e.target.value)}
               >
                 <option value="Pending">Chờ duyệt</option>
-                <option value="Approved">Đã duyệt</option>
+                <option value="Published">Đã đăng</option>
+                <option value="InTransaction">Đang giao dịch</option>
+                <option value="Sold">Đã bán</option>
+                <option value="Expired">Hết hạn</option>
                 <option value="Rejected">Từ chối</option>
-                <option value="Active">Hoạt động</option>
-                <option value="Inactive">Không hoạt động</option>
               </select>
               <div className="flex gap-3 justify-end">
                 <button
