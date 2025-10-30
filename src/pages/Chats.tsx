@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { Chat, ChatDetail } from '../types/chat';
 import chatService from '../services/chatService';
+import toast, { Toaster } from 'react-hot-toast';
 
 export default function Chats() {
   const [chats, setChats] = useState<Chat[]>([]);
@@ -44,7 +45,7 @@ export default function Chats() {
       setShowDetailModal(true);
     } catch (error) {
       console.error('Error fetching chat detail:', error);
-      alert('Có lỗi xảy ra khi tải chi tiết chat!');
+      toast.error('Có lỗi xảy ra khi tải chi tiết chat!');
     } finally {
       setLoadingDetail(false);
     }
@@ -64,6 +65,31 @@ export default function Chats() {
 
   return (
     <Layout>
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#fff',
+            color: '#363636',
+            padding: '16px',
+            borderRadius: '8px',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+          },
+          success: {
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
       <div className="p-8">
         {/* Header */}
         <div className="mb-8">

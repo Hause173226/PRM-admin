@@ -3,6 +3,7 @@ import Layout from '../components/Layout';
 import { Search, Eye, Lock, Unlock, Edit } from 'lucide-react';
 import { User } from '../types';
 import userService from '../services/userService';
+import toast, { Toaster } from 'react-hot-toast';
 
 type FilterStatus = 'all' | 'active' | 'inactive';
 
@@ -78,9 +79,9 @@ export default function Users() {
     try {
       await userService.banUser(userId);
       await fetchUsers(); // Reload danh sách
-      alert('Đã khóa người dùng thành công');
+      toast.success('Đã khóa người dùng thành công');
     } catch (err) {
-      alert('Không thể khóa người dùng. Vui lòng thử lại.');
+      toast.error('Không thể khóa người dùng. Vui lòng thử lại.');
       console.error('Error banning user:', err);
     }
   };
@@ -94,9 +95,9 @@ export default function Users() {
       // Dùng PUT /api/users/:id với isActive: true để mở khóa
       await userService.updateUser(userId, { isActive: true });
       await fetchUsers(); // Reload danh sách
-      alert('Đã mở khóa người dùng thành công');
+      toast.success('Đã mở khóa người dùng thành công');
     } catch (err) {
-      alert('Không thể mở khóa người dùng. Vui lòng thử lại.');
+      toast.error('Không thể mở khóa người dùng. Vui lòng thử lại.');
       console.error('Error unbanning user:', err);
     }
   };
@@ -129,15 +130,40 @@ export default function Users() {
       await userService.updateUser(userId, data);
       await fetchUsers();
       setEditingUser(null);
-      alert('Cập nhật thông tin người dùng thành công');
+      toast.success('Cập nhật thông tin người dùng thành công');
     } catch (err) {
-      alert('Không thể cập nhật thông tin. Vui lòng thử lại.');
+      toast.error('Không thể cập nhật thông tin. Vui lòng thử lại.');
       console.error('Error updating user:', err);
     }
   };
 
   return (
     <Layout>
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#fff',
+            color: '#363636',
+            padding: '16px',
+            borderRadius: '8px',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+          },
+          success: {
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Quản lý Người dùng</h1>

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Media } from '../types/media';
 import mediaService from '../services/mediaService';
+import toast, { Toaster } from 'react-hot-toast';
 
 export default function MediaPage() {
   const [mediaList, setMediaList] = useState<Media[]>([]);
@@ -35,7 +36,7 @@ export default function MediaPage() {
       setShowDetailModal(true);
     } catch (error) {
       console.error('Error fetching media detail:', error);
-      alert('Có lỗi xảy ra khi tải chi tiết media!');
+      toast.error('Có lỗi xảy ra khi tải chi tiết media!');
     } finally {
       setLoadingDetail(false);
     }
@@ -53,10 +54,10 @@ export default function MediaPage() {
       await mediaService.deleteMedia(selectedMedia.id);
       setMediaList(mediaList.filter(m => m.id !== selectedMedia.id));
       setShowDeleteModal(false);
-      alert('Xóa media thành công!');
+      toast.success('Xóa media thành công!');
     } catch (error) {
       console.error('Error deleting media:', error);
-      alert('Có lỗi xảy ra khi xóa media!');
+      toast.error('Có lỗi xảy ra khi xóa media!');
     }
   };
 
@@ -113,6 +114,31 @@ export default function MediaPage() {
 
   return (
     <Layout>
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#fff',
+            color: '#363636',
+            padding: '16px',
+            borderRadius: '8px',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+          },
+          success: {
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
       <div className="p-8">
         {/* Header */}
         <div className="mb-8">
