@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Escrow } from '../types/escrow';
 import escrowService from '../services/escrowService';
+import toast, { Toaster } from 'react-hot-toast';
 
 export default function Escrows() {
   const [escrows, setEscrows] = useState<Escrow[]>([]);
@@ -62,7 +63,7 @@ export default function Escrows() {
       setShowDetailModal(true);
     } catch (error) {
       console.error('Error fetching escrow detail:', error);
-      alert('Có lỗi xảy ra khi tải chi tiết escrow!');
+      toast.error('Có lỗi xảy ra khi tải chi tiết escrow!');
     }
   };
 
@@ -104,6 +105,31 @@ export default function Escrows() {
 
   return (
     <Layout>
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#fff',
+            color: '#363636',
+            padding: '16px',
+            borderRadius: '8px',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+          },
+          success: {
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
       <div className="p-8">
         {/* Header */}
         <div className="mb-8">

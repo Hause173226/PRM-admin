@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Lock, Mail, User } from 'lucide-react';
+import toast, { Toaster } from 'react-hot-toast';
 
 export default function Register() {
   const [name, setName] = useState('');
@@ -12,7 +13,7 @@ export default function Register() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
-      alert('Mật khẩu không khớp');
+      toast.error('Mật khẩu không khớp');
       return;
     }
     navigate('/login');
@@ -20,6 +21,31 @@ export default function Register() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#fff',
+            color: '#363636',
+            padding: '16px',
+            borderRadius: '8px',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+          },
+          success: {
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex w-16 h-16 bg-blue-600 rounded-2xl items-center justify-center mb-4">

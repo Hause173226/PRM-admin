@@ -24,6 +24,17 @@ export const getAllProducts = async (filters?: ProductFilters): Promise<ProductL
   return response.data;
 };
 
+// GET /api/products/{id} - Xem chi tiết sản phẩm
+export const getProductById = async (productId: string): Promise<Product> => {
+  try {
+    const response = await api.get<Product>(`/api/products/${productId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching product details:', error);
+    throw error;
+  }
+};
+
 // PUT /api/products/{id}/approve - Duyệt sản phẩm
 export const approveProduct = async (
   productId: string, 
@@ -69,6 +80,7 @@ export const updateProductStatus = async (
 // Xuất tất cả functions
 export default {
   getAllProducts,
+  getProductById,
   approveProduct,
   rejectProduct,
   updateProductStatus,

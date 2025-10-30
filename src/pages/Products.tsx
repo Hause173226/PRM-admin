@@ -7,15 +7,18 @@ import {
   CheckCircle, 
   XCircle, 
   Edit,
-
+  Eye,
+  X,
 } from 'lucide-react';
 import { Product, ProductFilters } from '../types/product';
 import { 
   getAllProducts, 
+  getProductById,
   approveProduct, 
   rejectProduct, 
   updateProductStatus 
 } from '../services/productService';
+import toast, { Toaster } from 'react-hot-toast';
 
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -32,7 +35,10 @@ export default function Products() {
   const [totalProducts, setTotalProducts] = useState(0);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [productDetail, setProductDetail] = useState<Product | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [newStatus, setNewStatus] = useState<string>('');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -83,10 +89,10 @@ export default function Products() {
     try {
       await approveProduct(productId);
       fetchProducts();
-      alert('Sản phẩm đã được duyệt thành công!');
+      toast.success('Sản phẩm đã được duyệt thành công!');
     } catch (error) {
       console.error('Error approving product:', error);
-      alert('Có lỗi xảy ra khi duyệt sản phẩm!');
+      toast.error('Có lỗi xảy ra khi duyệt sản phẩm!');
     }
   };
 
@@ -98,7 +104,7 @@ export default function Products() {
 
   const handleRejectSubmit = async () => {
     if (!selectedProduct || !rejectReason.trim()) {
-      alert('Vui lòng nhập lý do từ chối!');
+      toast.error('Vui lòng nhập lý do từ chối!');
       return;
     }
 
@@ -106,10 +112,10 @@ export default function Products() {
       await rejectProduct(selectedProduct.id, { reason: rejectReason });
       setShowRejectModal(false);
       fetchProducts();
-      alert('Sản phẩm đã được từ chối!');
+      toast.success('Sản phẩm đã được từ chối!');
     } catch (error) {
       console.error('Error rejecting product:', error);
-      alert('Có lỗi xảy ra khi từ chối sản phẩm!');
+      toast.error('Có lỗi xảy ra khi từ chối sản phẩm!');
     }
   };
 
@@ -121,7 +127,7 @@ export default function Products() {
 
   const handleStatusUpdate = async () => {
     if (!selectedProduct || !newStatus) {
-      alert('Vui lòng chọn trạng thái!');
+      toast.error('Vui lòng chọn trạng thái!');
       return;
     }
 
@@ -131,10 +137,27 @@ export default function Products() {
       });
       setShowStatusModal(false);
       fetchProducts();
-      alert('Cập nhật trạng thái thành công!');
+      toast.success('Cập nhật trạng thái thành công!');
     } catch (error) {
       console.error('Error updating status:', error);
-      alert('Có lỗi xảy ra khi cập nhật trạng thái!');
+      toast.error('Có lỗi xảy ra khi cập nhật trạng thái!');
+    }
+  };
+
+  const handleViewDetail = async (productId: string) => {
+    setShowDetailModal(true);
+    setLoadingDetail(true);
+    setProductDetail(null);
+    
+    try {
+      const detail = await getProductById(productId);
+      setProductDetail(detail);
+    } catch (error) {
+      console.error('Error fetching product detail:', error);
+      toast.error('Có lỗi xảy ra khi tải chi tiết sản phẩm!');
+      setShowDetailModal(false);
+    } finally {
+      setLoadingDetail(false);
     }
   };
 
@@ -179,6 +202,31 @@ export default function Products() {
 
   return (
     <Layout>
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#fff',
+            color: '#363636',
+            padding: '16px',
+            borderRadius: '8px',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+          },
+          success: {
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
       <div className="p-8">
         {/* Header */}
         <div className="mb-8">
@@ -344,12 +392,6 @@ export default function Products() {
                         Sản phẩm
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                        Thông số
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                        Tình trạng
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                         Vị trí
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
@@ -390,19 +432,6 @@ export default function Products() {
                             </div>
                           </td>
                           <td className="px-6 py-4">
-                            <div className="text-sm space-y-1">
-                              <div className="text-gray-900">⚡ {product.voltage} • {product.capacity}</div>
-                              <div className="text-gray-600">🔋 {product.cycleCount} cycles</div>
-                              <div className="text-gray-600">📅 Năm {product.year}</div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm space-y-1">
-                              <div className="text-gray-900">{product.condition}</div>
-                              <div className="text-gray-600">🛡️ BH: {product.warranty}</div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
                             <div className="text-sm text-gray-900">📍 {product.location}</div>
                           </td>
                           <td className="px-6 py-4">
@@ -415,6 +444,13 @@ export default function Products() {
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex items-center justify-center gap-2">
+                              <button
+                                onClick={() => handleViewDetail(product.id)}
+                                className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                                title="Xem chi tiết"
+                              >
+                                <Eye size={20} />
+                              </button>
                               {product.status === 'Pending' && (
                                 <>
                                   <button
@@ -446,7 +482,7 @@ export default function Products() {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={7} className="px-6 py-12 text-center">
+                        <td colSpan={5} className="px-6 py-12 text-center">
                           <div className="flex flex-col items-center justify-center">
                             <Package className="text-gray-400 mb-3" size={48} />
                             <p className="text-gray-500 text-lg font-medium">Không có sản phẩm nào</p>
@@ -553,6 +589,217 @@ export default function Products() {
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   Cập nhật
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Product Detail Modal */}
+        {showDetailModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              {/* Modal Header */}
+              <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+                <h3 className="text-2xl font-bold text-gray-900">Chi tiết sản phẩm</h3>
+                <button
+                  onClick={() => setShowDetailModal(false)}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-6">
+                {loadingDetail ? (
+                  <div className="flex justify-center items-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+                  </div>
+                ) : productDetail ? (
+                  <div className="space-y-6">
+                    {/* Images Section */}
+                    {productDetail.images && productDetail.images.length > 0 && (
+                      <div className="space-y-3">
+                        <h4 className="text-lg font-semibold text-gray-900">Hình ảnh</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                          {productDetail.images.map((image, index) => (
+                            <img
+                              key={index}
+                              src={image}
+                              alt={`Product ${index + 1}`}
+                              className="w-full h-48 object-cover rounded-lg border border-gray-200"
+                              onError={(e) => {
+                                e.currentTarget.src = 'https://via.placeholder.com/300x200?text=No+Image';
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Basic Info */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <h4 className="text-lg font-semibold text-gray-900">Thông tin cơ bản</h4>
+                        <div className="space-y-3">
+                          <div className="flex justify-between py-2 border-b border-gray-100">
+                            <span className="text-gray-600">Tên sản phẩm:</span>
+                            <span className="font-medium text-gray-900">{productDetail.name || `${productDetail.brand} ${productDetail.voltage}`}</span>
+                          </div>
+                          <div className="flex justify-between py-2 border-b border-gray-100">
+                            <span className="text-gray-600">Loại:</span>
+                            <span className="font-medium text-gray-900">{productDetail.type}</span>
+                          </div>
+                          <div className="flex justify-between py-2 border-b border-gray-100">
+                            <span className="text-gray-600">Thương hiệu:</span>
+                            <span className="font-medium text-gray-900">{productDetail.brand}</span>
+                          </div>
+                          <div className="flex justify-between py-2 border-b border-gray-100">
+                            <span className="text-gray-600">Trạng thái:</span>
+                            <span>{getStatusBadge(productDetail.status)}</span>
+                          </div>
+                          <div className="flex justify-between py-2 border-b border-gray-100">
+                            <span className="text-gray-600">Kiểu niêm yết:</span>
+                            <span className="font-medium text-gray-900">
+                              {productDetail.listingType === 'FixedPrice' ? 'Giá cố định' : 'Đấu giá'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between py-2 border-b border-gray-100">
+                            <span className="text-gray-600">Giá:</span>
+                            <span className="font-semibold text-purple-600 text-lg">
+                              {productDetail.price ? productDetail.price.toLocaleString('vi-VN') : '0'} đ
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <h4 className="text-lg font-semibold text-gray-900">Thông số kỹ thuật</h4>
+                        <div className="space-y-3">
+                          <div className="flex justify-between py-2 border-b border-gray-100">
+                            <span className="text-gray-600">Điện áp:</span>
+                            <span className="font-medium text-gray-900">{productDetail.voltage}</span>
+                          </div>
+                          <div className="flex justify-between py-2 border-b border-gray-100">
+                            <span className="text-gray-600">Dung lượng:</span>
+                            <span className="font-medium text-gray-900">{productDetail.capacity}</span>
+                          </div>
+                          <div className="flex justify-between py-2 border-b border-gray-100">
+                            <span className="text-gray-600">Số chu kỳ:</span>
+                            <span className="font-medium text-gray-900">{productDetail.cycleCount} cycles</span>
+                          </div>
+                          <div className="flex justify-between py-2 border-b border-gray-100">
+                            <span className="text-gray-600">Tình trạng:</span>
+                            <span className="font-medium text-gray-900">{productDetail.condition}</span>
+                          </div>
+                          <div className="flex justify-between py-2 border-b border-gray-100">
+                            <span className="text-gray-600">Năm sản xuất:</span>
+                            <span className="font-medium text-gray-900">{productDetail.year}</span>
+                          </div>
+                          <div className="flex justify-between py-2 border-b border-gray-100">
+                            <span className="text-gray-600">SOH:</span>
+                            <span className="font-medium text-gray-900">
+                              {productDetail.soh !== null ? `${productDetail.soh}%` : 'N/A'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Location & Warranty */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <h4 className="text-lg font-semibold text-gray-900">Vị trí & Bảo hành</h4>
+                        <div className="space-y-3">
+                          <div className="flex justify-between py-2 border-b border-gray-100">
+                            <span className="text-gray-600">📍 Vị trí:</span>
+                            <span className="font-medium text-gray-900">{productDetail.location}</span>
+                          </div>
+                          <div className="flex justify-between py-2 border-b border-gray-100">
+                            <span className="text-gray-600">🛡️ Bảo hành:</span>
+                            <span className="font-medium text-gray-900">{productDetail.warranty}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {productDetail.seller && (
+                        <div className="space-y-3">
+                          <h4 className="text-lg font-semibold text-gray-900">Người bán</h4>
+                          <div className="space-y-3">
+                            <div className="flex justify-between py-2 border-b border-gray-100">
+                              <span className="text-gray-600">Tên:</span>
+                              <span className="font-medium text-gray-900">{productDetail.seller.name}</span>
+                            </div>
+                            {productDetail.seller.email && (
+                              <div className="flex justify-between py-2 border-b border-gray-100">
+                                <span className="text-gray-600">Email:</span>
+                                <span className="font-medium text-gray-900">{productDetail.seller.email}</span>
+                              </div>
+                            )}
+                            <div className="flex justify-between py-2 border-b border-gray-100">
+                              <span className="text-gray-600">ID:</span>
+                              <span className="font-medium text-gray-900 text-sm">{productDetail.seller.id}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Description */}
+                    {productDetail.description && (
+                      <div className="space-y-3">
+                        <h4 className="text-lg font-semibold text-gray-900">Mô tả</h4>
+                        <p className="text-gray-700 bg-gray-50 p-4 rounded-lg whitespace-pre-wrap">
+                          {productDetail.description}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Rejection Reason */}
+                    {productDetail.status === 'Rejected' && productDetail.rejectionReason && (
+                      <div className="space-y-3">
+                        <h4 className="text-lg font-semibold text-red-600">Lý do từ chối</h4>
+                        <p className="text-gray-700 bg-red-50 border border-red-200 p-4 rounded-lg">
+                          {productDetail.rejectionReason}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Timestamps */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-200">
+                      {productDetail.createdAt && (
+                        <div className="flex justify-between py-2">
+                          <span className="text-gray-600">Ngày tạo:</span>
+                          <span className="font-medium text-gray-900">
+                            {new Date(productDetail.createdAt).toLocaleString('vi-VN')}
+                          </span>
+                        </div>
+                      )}
+                      {productDetail.updatedAt && (
+                        <div className="flex justify-between py-2">
+                          <span className="text-gray-600">Cập nhật lần cuối:</span>
+                          <span className="font-medium text-gray-900">
+                            {new Date(productDetail.updatedAt).toLocaleString('vi-VN')}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <p className="text-gray-500">Không tìm thấy thông tin sản phẩm</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end">
+                <button
+                  onClick={() => setShowDetailModal(false)}
+                  className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  Đóng
                 </button>
               </div>
             </div>
