@@ -12,6 +12,7 @@ import Orders from './pages/Orders';
 import Escrows from './pages/Escrows';
 import Chats from './pages/Chats';
 import Media from './pages/Media';
+import Profile from './pages/Profile';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
         <Route path="/transactions" element={<Transactions />} />
         <Route path="/fees" element={<Fees />} />
         <Route path="/reports" element={<Reports />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </BrowserRouter>
   );

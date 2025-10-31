@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { Media } from '../types/media';
 import mediaService from '../services/mediaService';
-import toast, { Toaster } from 'react-hot-toast';
+import Toast, { ToastType } from '../components/Toast';
 
 export default function MediaPage() {
   const [mediaList, setMediaList] = useState<Media[]>([]);
@@ -23,6 +23,7 @@ export default function MediaPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<Media | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
   // Note: Since we don't have a "get all media" endpoint, 
   // you would need to fetch media when you have specific IDs
@@ -36,7 +37,7 @@ export default function MediaPage() {
       setShowDetailModal(true);
     } catch (error) {
       console.error('Error fetching media detail:', error);
-      toast.error('Có lỗi xảy ra khi tải chi tiết media!');
+      setToast({ message: 'Có lỗi xảy ra khi tải chi tiết media!', type: 'error' });
     } finally {
       setLoadingDetail(false);
     }
@@ -54,10 +55,10 @@ export default function MediaPage() {
       await mediaService.deleteMedia(selectedMedia.id);
       setMediaList(mediaList.filter(m => m.id !== selectedMedia.id));
       setShowDeleteModal(false);
-      toast.success('Xóa media thành công!');
+      setToast({ message: 'Xóa media thành công!', type: 'success' });
     } catch (error) {
       console.error('Error deleting media:', error);
-      toast.error('Có lỗi xảy ra khi xóa media!');
+      setToast({ message: 'Có lỗi xảy ra khi xóa media!', type: 'error' });
     }
   };
 
@@ -114,31 +115,14 @@ export default function MediaPage() {
 
   return (
     <Layout>
-      <Toaster 
-        position="top-right"
-        toastOptions={{
-          duration: 3000,
-          style: {
-            background: '#fff',
-            color: '#363636',
-            padding: '16px',
-            borderRadius: '8px',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-          },
-          success: {
-            iconTheme: {
-              primary: '#10b981',
-              secondary: '#fff',
-            },
-          },
-          error: {
-            iconTheme: {
-              primary: '#ef4444',
-              secondary: '#fff',
-            },
-          },
-        }}
-      />
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+      
       <div className="p-8">
         {/* Header */}
         <div className="mb-8">

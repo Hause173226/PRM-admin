@@ -6,7 +6,6 @@ import {
   Filter, 
   CheckCircle, 
   XCircle, 
-  Edit,
   Eye,
   X,
 } from 'lucide-react';
@@ -15,10 +14,9 @@ import {
   getAllProducts, 
   getProductById,
   approveProduct, 
-  rejectProduct, 
-  updateProductStatus 
+  rejectProduct
 } from '../services/productService';
-import toast, { Toaster } from 'react-hot-toast';
+import Toast, { ToastType } from '../components/Toast';
 
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -34,14 +32,13 @@ export default function Products() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
   const [showRejectModal, setShowRejectModal] = useState(false);
-  const [showStatusModal, setShowStatusModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [productDetail, setProductDetail] = useState<Product | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
-  const [newStatus, setNewStatus] = useState<string>('');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const pageSize = 10;
 
   useEffect(() => {
@@ -89,10 +86,10 @@ export default function Products() {
     try {
       await approveProduct(productId);
       fetchProducts();
-      toast.success('Sản phẩm đã được duyệt thành công!');
+      setToast({ message: 'Sản phẩm đã được duyệt thành công!', type: 'success' });
     } catch (error) {
       console.error('Error approving product:', error);
-      toast.error('Có lỗi xảy ra khi duyệt sản phẩm!');
+      setToast({ message: 'Có lỗi xảy ra khi duyệt sản phẩm!', type: 'error' });
     }
   };
 
@@ -104,7 +101,7 @@ export default function Products() {
 
   const handleRejectSubmit = async () => {
     if (!selectedProduct || !rejectReason.trim()) {
-      toast.error('Vui lòng nhập lý do từ chối!');
+      setToast({ message: 'Vui lòng nhập lý do từ chối!', type: 'error' });
       return;
     }
 
@@ -112,35 +109,10 @@ export default function Products() {
       await rejectProduct(selectedProduct.id, { reason: rejectReason });
       setShowRejectModal(false);
       fetchProducts();
-      toast.success('Sản phẩm đã được từ chối!');
+      setToast({ message: 'Sản phẩm đã được từ chối!', type: 'success' });
     } catch (error) {
       console.error('Error rejecting product:', error);
-      toast.error('Có lỗi xảy ra khi từ chối sản phẩm!');
-    }
-  };
-
-  const handleStatusChangeClick = (product: Product) => {
-    setSelectedProduct(product);
-    setNewStatus(product.status);
-    setShowStatusModal(true);
-  };
-
-  const handleStatusUpdate = async () => {
-    if (!selectedProduct || !newStatus) {
-      toast.error('Vui lòng chọn trạng thái!');
-      return;
-    }
-
-    try {
-      await updateProductStatus(selectedProduct.id, { 
-        status: newStatus as 'Pending' | 'Published' | 'InTransaction' | 'Sold' | 'Expired' | 'Rejected'
-      });
-      setShowStatusModal(false);
-      fetchProducts();
-      toast.success('Cập nhật trạng thái thành công!');
-    } catch (error) {
-      console.error('Error updating status:', error);
-      toast.error('Có lỗi xảy ra khi cập nhật trạng thái!');
+      setToast({ message: 'Có lỗi xảy ra khi từ chối sản phẩm!', type: 'error' });
     }
   };
 
@@ -154,7 +126,7 @@ export default function Products() {
       setProductDetail(detail);
     } catch (error) {
       console.error('Error fetching product detail:', error);
-      toast.error('Có lỗi xảy ra khi tải chi tiết sản phẩm!');
+      setToast({ message: 'Có lỗi xảy ra khi tải chi tiết sản phẩm!', type: 'error' });
       setShowDetailModal(false);
     } finally {
       setLoadingDetail(false);
@@ -202,31 +174,14 @@ export default function Products() {
 
   return (
     <Layout>
-      <Toaster 
-        position="top-right"
-        toastOptions={{
-          duration: 3000,
-          style: {
-            background: '#fff',
-            color: '#363636',
-            padding: '16px',
-            borderRadius: '8px',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-          },
-          success: {
-            iconTheme: {
-              primary: '#10b981',
-              secondary: '#fff',
-            },
-          },
-          error: {
-            iconTheme: {
-              primary: '#ef4444',
-              secondary: '#fff',
-            },
-          },
-        }}
-      />
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+      
       <div className="p-8">
         {/* Header */}
         <div className="mb-8">
@@ -244,7 +199,7 @@ export default function Products() {
 
         {/* Filters */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
               <input
@@ -273,22 +228,6 @@ export default function Products() {
                 <option value="Sold">Đã bán</option>
                 <option value="Expired">Hết hạn</option>
                 <option value="Rejected">Từ chối</option>
-              </select>
-            </div>
-
-            <div className="relative">
-              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <select
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
-                value={selectedType}
-                onChange={(e) => {
-                  setSelectedType(e.target.value);
-                  setCurrentPage(1);
-                }}
-              >
-                <option value="">Tất cả loại</option>
-                <option value="battery">Pin</option>
-                <option value="vehicle">Xe điện</option>
               </select>
             </div>
           </div>
@@ -469,13 +408,6 @@ export default function Products() {
                                   </button>
                                 </>
                               )}
-                              <button
-                                onClick={() => handleStatusChangeClick(product)}
-                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                title="Thay đổi trạng thái"
-                              >
-                                <Edit size={20} />
-                              </button>
                             </div>
                           </td>
                         </tr>
@@ -551,44 +483,6 @@ export default function Products() {
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                 >
                   Xác nhận từ chối
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Status Change Modal */}
-        {showStatusModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Cập nhật trạng thái</h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Sản phẩm: <span className="font-semibold">{selectedProduct?.name || selectedProduct?.brand}</span>
-              </p>
-              <select
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
-                value={newStatus}
-                onChange={(e) => setNewStatus(e.target.value)}
-              >
-                <option value="Pending">Chờ duyệt</option>
-                <option value="Published">Đã đăng</option>
-                <option value="InTransaction">Đang giao dịch</option>
-                <option value="Sold">Đã bán</option>
-                <option value="Expired">Hết hạn</option>
-                <option value="Rejected">Từ chối</option>
-              </select>
-              <div className="flex gap-3 justify-end">
-                <button
-                  onClick={() => setShowStatusModal(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Hủy
-                </button>
-                <button
-                  onClick={handleStatusUpdate}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Cập nhật
                 </button>
               </div>
             </div>

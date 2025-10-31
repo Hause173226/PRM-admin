@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { Order } from '../types/order';
 import orderService from '../services/orderService';
-import toast, { Toaster } from 'react-hot-toast';
+import Toast, { ToastType } from '../components/Toast';
 
 export default function Orders() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -36,6 +36,7 @@ export default function Orders() {
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [newStatus, setNewStatus] = useState<string>('');
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const pageSize = 10;
 
   useEffect(() => {
@@ -50,7 +51,7 @@ export default function Orders() {
       setTotalPages(response.totalPages || 1);
       setTotalOrders(response.total || 0);
     } catch (error) {
-      toast.error('Không thể tải danh sách đơn hàng');
+      setToast({ message: 'Không thể tải danh sách đơn hàng', type: 'error' });
       setOrders([]);
       setTotalPages(1);
       setTotalOrders(0);
@@ -72,22 +73,31 @@ export default function Orders() {
 
   const handleStatusUpdate = async () => {
     if (!selectedOrder || !newStatus) {
-      toast.error('Vui lòng chọn trạng thái!');
+      setToast({ message: 'Vui lòng chọn trạng thái!', type: 'error' });
       return;
     }
 
-    const loadingToast = toast.loading('Đang cập nhật trạng thái...');
-    
     try {
       await orderService.updateOrderStatus(selectedOrder.id, { 
         status: newStatus as Order['status']
       });
       setShowStatusModal(false);
       fetchOrders();
-      toast.success('Cập nhật trạng thái thành công!', { id: loadingToast });
+      setToast({ message: 'Cập nhật trạng thái thành công!', type: 'success' });
     } catch (error) {
-      toast.error('Có lỗi xảy ra khi cập nhật trạng thái!', { id: loadingToast });
+      setToast({ message: 'Có lỗi xảy ra khi cập nhật trạng thái!', type: 'error' });
     }
+  };
+
+  const getStatusLabel = (status: string) => {
+    const statusLabels: { [key: string]: string } = {
+      'None': 'Không có',
+      'Pending': 'Chờ xử lý',
+      'Confirmed': 'Đã xác nhận',
+      'Processing': 'Đang xử lý',
+      'Shipped': 'Đang giao',
+    };
+    return statusLabels[status] || status;
   };
 
   const getStatusBadge = (status: string) => {
@@ -97,7 +107,8 @@ export default function Orders() {
       Processing: { color: 'bg-blue-100 text-blue-800 border-blue-200', icon: Package, label: 'Đang xử lý' },
       Shipped: { color: 'bg-purple-100 text-purple-800 border-purple-200', icon: Truck, label: 'Đang giao' },
     };
-
+    console.log(status);
+    console.log(statusConfig);
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.Pending;
     const Icon = config.icon;
 
@@ -141,7 +152,14 @@ export default function Orders() {
 
   return (
     <Layout>
-      <Toaster position="top-right" />
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+      
       <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
         {/* Header */}
         <div className="mb-6">
@@ -369,13 +387,6 @@ export default function Orders() {
                               >
                                 <Eye size={18} />
                               </button>
-                              <button
-                                onClick={() => handleStatusChangeClick(order)}
-                                className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-all hover:scale-110"
-                                title="Cập nhật trạng thái"
-                              >
-                                <Edit size={18} />
-                              </button>
                             </div>
                           </td>
                         </tr>
@@ -439,15 +450,28 @@ export default function Orders() {
                   </h3>
                   <p className="text-blue-100 text-sm mt-1 font-mono">#{selectedOrder.id}</p>
                 </div>
-                <button
-                  onClick={() => setShowDetailModal(false)}
-                  className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-                >
-                  <X size={24} />
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => {
+                      setShowDetailModal(false);
+                      handleStatusChangeClick(selectedOrder);
+                    }}
+                    className="px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-all font-semibold flex items-center gap-2 shadow-lg"
+                  >
+                    <Edit size={18} />
+                    Cập nhật trạng thái
+                  </button>
+                  <button
+                    onClick={() => setShowDetailModal(false)}
+                    className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
               </div>
 
               <div className="p-6">
+
                 {/* Quick Info Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                   <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200">
@@ -639,11 +663,11 @@ export default function Orders() {
                             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                               <div className="flex items-center gap-2">
                                 <span className="font-bold text-gray-900 text-sm">
-                                  {event.fromStatus}
+                                  {getStatusLabel(event.fromStatus)}
                                 </span>
                                 <span className="text-gray-400">→</span>
                                 <span className="font-bold text-indigo-600 text-sm">
-                                  {event.toStatus}
+                                  {getStatusLabel(event.toStatus)}
                                 </span>
                               </div>
                               <div className="flex items-center gap-1 text-xs text-gray-500">
@@ -662,26 +686,6 @@ export default function Orders() {
                   </div>
                 )}
 
-                {/* Action Buttons */}
-                <div className="flex gap-3 justify-end mt-6 pt-6 border-t-2 border-gray-200">
-                  <button
-                    onClick={() => setShowDetailModal(false)}
-                    className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all font-semibold flex items-center gap-2"
-                  >
-                    <X size={18} />
-                    Đóng
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowDetailModal(false);
-                      handleStatusChangeClick(selectedOrder);
-                    }}
-                    className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-semibold flex items-center gap-2 shadow-lg"
-                  >
-                    <Edit size={18} />
-                    Cập nhật trạng thái
-                  </button>
-                </div>
               </div>
             </div>
           </div>

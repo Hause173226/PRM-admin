@@ -7,46 +7,30 @@ import {
   DollarSign,
   Clock,
   CheckCircle,
-  XCircle,
   AlertCircle
 } from 'lucide-react';
 import { Escrow } from '../types/escrow';
 import escrowService from '../services/escrowService';
-import toast, { Toaster } from 'react-hot-toast';
+import Toast, { ToastType } from '../components/Toast';
 
 export default function Escrows() {
   const [escrows, setEscrows] = useState<Escrow[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewType, setViewType] = useState<'all' | 'buyer' | 'seller'>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('');
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedEscrow, setSelectedEscrow] = useState<Escrow | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
   useEffect(() => {
     fetchEscrows();
-  }, [viewType]);
+  }, [statusFilter]);
 
   const fetchEscrows = async () => {
     setLoading(true);
     try {
-      let response;
-      if (viewType === 'buyer') {
-        response = await escrowService.getBuyerEscrows();
-      } else if (viewType === 'seller') {
-        response = await escrowService.getSellerEscrows();
-      } else {
-        // For 'all', we'll fetch both and combine (you might need to adjust this based on your API)
-        const buyerResponse = await escrowService.getBuyerEscrows();
-        const sellerResponse = await escrowService.getSellerEscrows();
-        const combined = [...(buyerResponse.data || []), ...(sellerResponse.data || [])];
-        // Remove duplicates based on ID
-        const uniqueEscrows = combined.filter((escrow, index, self) =>
-          index === self.findIndex((e) => e.id === escrow.id)
-        );
-        setEscrows(uniqueEscrows);
-        setLoading(false);
-        return;
-      }
+      const params = statusFilter ? { status: statusFilter } : {};
+      const response = await escrowService.getAllEscrows(params);
       setEscrows(response.data || []);
     } catch (error) {
       console.error('Error fetching escrows:', error);
@@ -63,19 +47,19 @@ export default function Escrows() {
       setShowDetailModal(true);
     } catch (error) {
       console.error('Error fetching escrow detail:', error);
-      toast.error('Có lỗi xảy ra khi tải chi tiết escrow!');
+      setToast({ message: 'Có lỗi xảy ra khi tải chi tiết escrow!', type: 'error' });
     }
   };
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      held: { color: 'bg-yellow-100 text-yellow-800', icon: Clock, label: 'Đang giữ' },
-      released: { color: 'bg-green-100 text-green-800', icon: CheckCircle, label: 'Đã giải phóng' },
-      refunded: { color: 'bg-blue-100 text-blue-800', icon: DollarSign, label: 'Đã hoàn tiền' },
-      disputed: { color: 'bg-red-100 text-red-800', icon: AlertCircle, label: 'Tranh chấp' },
+      HOLDING: { color: 'bg-yellow-100 text-yellow-800', icon: Clock, label: 'Đang giữ' },
+      RELEASED: { color: 'bg-green-100 text-green-800', icon: CheckCircle, label: 'Đã giải phóng' },
+      REFUNDED: { color: 'bg-blue-100 text-blue-800', icon: DollarSign, label: 'Đã hoàn tiền' },
+      DISPUTED: { color: 'bg-red-100 text-red-800', icon: AlertCircle, label: 'Tranh chấp' },
     };
 
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.held;
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.HOLDING;
     const Icon = config.icon;
 
     return (
@@ -98,38 +82,21 @@ export default function Escrows() {
     return matchesSearch;
   });
 
-  const totalAmount = filteredEscrows.reduce((sum, escrow) => sum + escrow.amount, 0);
+  const totalAmount = filteredEscrows.reduce((sum, escrow) => sum + escrow.amountTotal, 0);
   const heldAmount = filteredEscrows
-    .filter(e => e.status === 'held')
-    .reduce((sum, escrow) => sum + escrow.amount, 0);
+    .filter(e => e.status === 'HOLDING')
+    .reduce((sum, escrow) => sum + escrow.amountHold, 0);
 
   return (
     <Layout>
-      <Toaster 
-        position="top-right"
-        toastOptions={{
-          duration: 3000,
-          style: {
-            background: '#fff',
-            color: '#363636',
-            padding: '16px',
-            borderRadius: '8px',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-          },
-          success: {
-            iconTheme: {
-              primary: '#10b981',
-              secondary: '#fff',
-            },
-          },
-          error: {
-            iconTheme: {
-              primary: '#ef4444',
-              secondary: '#fff',
-            },
-          },
-        }}
-      />
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+      
       <div className="p-8">
         {/* Header */}
         <div className="mb-8">
@@ -162,44 +129,25 @@ export default function Escrows() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
               <input
                 type="text"
-                placeholder="Tìm kiếm theo ID escrow, order, buyer, seller..."
+                placeholder="Tìm kiếm theo ID escrow, order..."
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
 
-            <div className="flex gap-2">
-              <button
-                onClick={() => setViewType('all')}
-                className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-                  viewType === 'all'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+            <div>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                Tất cả
-              </button>
-              <button
-                onClick={() => setViewType('buyer')}
-                className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-                  viewType === 'buyer'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Buyer
-              </button>
-              <button
-                onClick={() => setViewType('seller')}
-                className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-                  viewType === 'seller'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Seller
-              </button>
+                <option value="">Tất cả trạng thái</option>
+                <option value="HOLDING">Đang giữ</option>
+                <option value="RELEASED">Đã giải phóng</option>
+                <option value="REFUNDED">Đã hoàn tiền</option>
+                <option value="DISPUTED">Tranh chấp</option>
+              </select>
             </div>
           </div>
         </div>
@@ -260,7 +208,7 @@ export default function Escrows() {
                           </td>
                           <td className="px-6 py-4">
                             <span className="text-sm font-semibold text-gray-900">
-                              {escrow.amount.toLocaleString('vi-VN')} đ
+                              {escrow.amountTotal.toLocaleString('vi-VN')} {escrow.currency}
                             </span>
                           </td>
                           <td className="px-6 py-4">
@@ -325,6 +273,14 @@ export default function Escrows() {
                     <p className="font-semibold text-gray-900">#{selectedEscrow.orderId}</p>
                   </div>
                   <div>
+                    <p className="text-sm text-gray-600">Mã sản phẩm</p>
+                    <p className="font-semibold text-gray-900">{selectedEscrow.productId}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Trạng thái</p>
+                    {getStatusBadge(selectedEscrow.status)}
+                  </div>
+                  <div>
                     <p className="text-sm text-gray-600">Buyer ID</p>
                     <p className="font-semibold text-gray-900">{selectedEscrow.buyerId}</p>
                   </div>
@@ -333,14 +289,16 @@ export default function Escrows() {
                     <p className="font-semibold text-gray-900">{selectedEscrow.sellerId}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Số tiền</p>
+                    <p className="text-sm text-gray-600">Tổng số tiền</p>
                     <p className="font-semibold text-green-600 text-lg">
-                      {selectedEscrow.amount.toLocaleString('vi-VN')} đ
+                      {selectedEscrow.amountTotal.toLocaleString('vi-VN')} {selectedEscrow.currency}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">Trạng thái</p>
-                    {getStatusBadge(selectedEscrow.status)}
+                    <p className="text-sm text-gray-600">Số tiền đang giữ</p>
+                    <p className="font-semibold text-yellow-600 text-lg">
+                      {selectedEscrow.amountHold.toLocaleString('vi-VN')} {selectedEscrow.currency}
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Ngày tạo</p>
@@ -354,24 +312,63 @@ export default function Escrows() {
                       {new Date(selectedEscrow.updatedAt).toLocaleString('vi-VN')}
                     </p>
                   </div>
-                  {selectedEscrow.releaseDate && (
-                    <div>
-                      <p className="text-sm text-gray-600">Ngày giải phóng</p>
-                      <p className="font-semibold text-gray-900">
-                        {new Date(selectedEscrow.releaseDate).toLocaleString('vi-VN')}
-                      </p>
-                    </div>
-                  )}
                 </div>
 
-                {selectedEscrow.notes && (
-                  <div>
-                    <p className="text-sm text-gray-600 mb-2">Ghi chú</p>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <p className="text-gray-900">{selectedEscrow.notes}</p>
+                {/* Payment Info */}
+                <div className="border-t pt-4">
+                  <h4 className="font-semibold text-gray-900 mb-3">Thông tin thanh toán</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600">Nhà cung cấp</p>
+                      <p className="font-semibold text-gray-900">{selectedEscrow.payment.provider}</p>
                     </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Payment Intent ID</p>
+                      <p className="font-semibold text-gray-900 text-xs break-all">{selectedEscrow.payment.paymentIntentId}</p>
+                    </div>
+                    {selectedEscrow.payment.authorizedAt && (
+                      <div>
+                        <p className="text-sm text-gray-600">Thời gian ủy quyền</p>
+                        <p className="font-semibold text-gray-900">
+                          {new Date(selectedEscrow.payment.authorizedAt).toLocaleString('vi-VN')}
+                        </p>
+                      </div>
+                    )}
+                    {selectedEscrow.payment.capturedAt && (
+                      <div>
+                        <p className="text-sm text-gray-600">Thời gian giữ tiền</p>
+                        <p className="font-semibold text-gray-900">
+                          {new Date(selectedEscrow.payment.capturedAt).toLocaleString('vi-VN')}
+                        </p>
+                      </div>
+                    )}
+                    {selectedEscrow.payment.refundedAt && (
+                      <div>
+                        <p className="text-sm text-gray-600">Thời gian hoàn tiền</p>
+                        <p className="font-semibold text-gray-900">
+                          {new Date(selectedEscrow.payment.refundedAt).toLocaleString('vi-VN')}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
+
+                {/* Events */}
+                <div className="border-t pt-4">
+                  <h4 className="font-semibold text-gray-900 mb-3">Lịch sử sự kiện</h4>
+                  <div className="space-y-2">
+                    {selectedEscrow.events.map((event, index) => (
+                      <div key={index} className="flex items-start gap-3 bg-gray-50 p-3 rounded-lg">
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900">{event.description}</p>
+                          <p className="text-sm text-gray-600">
+                            {new Date(event.at).toLocaleString('vi-VN')}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               <div className="flex gap-3 justify-end mt-6">
