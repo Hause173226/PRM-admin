@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
-import { Search, Eye, Lock, Unlock, Edit } from 'lucide-react';
+import { Search, Eye, Lock, Unlock, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
 import { User } from '../types';
 import userService from '../services/userService';
-import toast, { Toaster } from 'react-hot-toast';
+import Toast, { ToastType } from '../components/Toast';
+import ConfirmPopover from '../components/ConfirmPopover';
 
 type FilterStatus = 'all' | 'active' | 'inactive';
 
@@ -15,6 +16,14 @@ export default function Users() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+  const [confirmPopover, setConfirmPopover] = useState<{
+    message: string;
+    onConfirm: () => void;
+    targetElement: HTMLElement;
+  } | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   useEffect(() => {
     fetchUsers();
@@ -52,6 +61,17 @@ export default function Users() {
     return matchesFilter && matchesSearch;
   }) || [];
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentUsers = filteredUsers.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filter or search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter, searchTerm]);
+
   const getStatusBadge = (isActive: boolean) => {
     return (
       <span className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -71,35 +91,41 @@ export default function Users() {
     return labels[role];
   };
 
-  const handleBanUser = async (userId: string) => {
-    if (!confirm('Bạn có chắc chắn muốn khóa người dùng này?')) {
-      return;
-    }
-    
-    try {
-      await userService.banUser(userId);
-      await fetchUsers(); // Reload danh sách
-      toast.success('Đã khóa người dùng thành công');
-    } catch (err) {
-      toast.error('Không thể khóa người dùng. Vui lòng thử lại.');
-      console.error('Error banning user:', err);
-    }
+  const handleBanUser = async (userId: string, event: React.MouseEvent<HTMLButtonElement>) => {
+    setConfirmPopover({
+      message: 'Bạn có chắc chắn muốn khóa người dùng này?',
+      targetElement: event.currentTarget,
+      onConfirm: async () => {
+        setConfirmPopover(null);
+        try {
+          await userService.banUser(userId);
+          await fetchUsers(); // Reload danh sách
+          setToast({ message: 'Đã khóa người dùng thành công', type: 'success' });
+        } catch (err) {
+          setToast({ message: 'Không thể khóa người dùng. Vui lòng thử lại.', type: 'error' });
+          console.error('Error banning user:', err);
+        }
+      }
+    });
   };
 
-  const handleUnbanUser = async (userId: string) => {
-    if (!confirm('Bạn có chắc chắn muốn mở khóa người dùng này?')) {
-      return;
-    }
-    
-    try {
-      // Dùng PUT /api/users/:id với isActive: true để mở khóa
-      await userService.updateUser(userId, { isActive: true });
-      await fetchUsers(); // Reload danh sách
-      toast.success('Đã mở khóa người dùng thành công');
-    } catch (err) {
-      toast.error('Không thể mở khóa người dùng. Vui lòng thử lại.');
-      console.error('Error unbanning user:', err);
-    }
+  const handleUnbanUser = async (userId: string, event: React.MouseEvent<HTMLButtonElement>) => {
+    setConfirmPopover({
+      message: 'Bạn có chắc chắn muốn mở khóa người dùng này?',
+      targetElement: event.currentTarget,
+      onConfirm: async () => {
+        setConfirmPopover(null);
+        try {
+          // Dùng PUT /api/users/:id với isActive: true để mở khóa
+          await userService.updateUser(userId, { isActive: true });
+          await fetchUsers(); // Reload danh sách
+          setToast({ message: 'Đã mở khóa người dùng thành công', type: 'success' });
+        } catch (err) {
+          setToast({ message: 'Không thể mở khóa người dùng. Vui lòng thử lại.', type: 'error' });
+          console.error('Error unbanning user:', err);
+        }
+      }
+    });
   };
 
   const handleViewDetails = async (user: User) => {
@@ -130,47 +156,41 @@ export default function Users() {
       await userService.updateUser(userId, data);
       await fetchUsers();
       setEditingUser(null);
-      toast.success('Cập nhật thông tin người dùng thành công');
+      setToast({ message: 'Cập nhật thông tin người dùng thành công', type: 'success' });
     } catch (err) {
-      toast.error('Không thể cập nhật thông tin. Vui lòng thử lại.');
+      setToast({ message: 'Không thể cập nhật thông tin. Vui lòng thử lại.', type: 'error' });
       console.error('Error updating user:', err);
     }
   };
 
   return (
     <Layout>
-      <Toaster 
-        position="top-right"
-        toastOptions={{
-          duration: 3000,
-          style: {
-            background: '#fff',
-            color: '#363636',
-            padding: '16px',
-            borderRadius: '8px',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-          },
-          success: {
-            iconTheme: {
-              primary: '#10b981',
-              secondary: '#fff',
-            },
-          },
-          error: {
-            iconTheme: {
-              primary: '#ef4444',
-              secondary: '#fff',
-            },
-          },
-        }}
-      />
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+      {confirmPopover && (
+        <ConfirmPopover
+          message={confirmPopover.message}
+          confirmText="OK"
+          cancelText="Cancel"
+          onConfirm={confirmPopover.onConfirm}
+          onCancel={() => setConfirmPopover(null)}
+          targetElement={confirmPopover.targetElement}
+        />
+      )}
+      
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Quản lý Người dùng</h1>
           <p className="text-gray-600 mt-1">Quản lý và kiểm duyệt người dùng trên nền tảng</p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl border border-blue-100 shadow-sm p-6">
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
@@ -179,7 +199,7 @@ export default function Users() {
                 placeholder="Tìm kiếm theo tên hoặc email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-blue-200 rounded-xl bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-colors"
               />
             </div>
 
@@ -190,8 +210,8 @@ export default function Users() {
                   onClick={() => setFilter(status)}
                   className={`px-4 py-2 rounded-xl font-medium transition-colors ${
                     filter === status
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'bg-blue-50 text-gray-700 hover:bg-blue-100 border border-blue-200'
                   }`}
                 >
                   {status === 'all' && 'Tất cả'}
@@ -224,7 +244,7 @@ export default function Users() {
           {!loading && !error && (
           <>
             {(() => {
-              console.log('Rendering table. Users:', users.length, 'Filtered:', filteredUsers.length);
+              console.log('Rendering table. Users:', users.length, 'Filtered:', filteredUsers.length, 'Current Page:', currentPage, 'Showing:', currentUsers.length);
               return null;
             })()}
           <div className="overflow-x-auto">
@@ -240,15 +260,15 @@ export default function Users() {
                 </tr>
               </thead>
               <tbody>
-                {filteredUsers.length === 0 ? (
+                {currentUsers.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="text-center py-8 text-gray-500">
-                      Không có người dùng nào
+                      {filteredUsers.length === 0 ? 'Không có người dùng nào' : 'Không có dữ liệu'}
                     </td>
                   </tr>
                 ) : (
-                  filteredUsers.map((user) => (
-                  <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                  currentUsers.map((user) => (
+                  <tr key={user.id} className="border-b border-blue-50 hover:bg-blue-50 transition-colors">
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-3">
                         {user.avatarUrl ? (
@@ -280,14 +300,14 @@ export default function Users() {
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleViewDetails(user)}
-                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                            className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
                             title="Xem chi tiết"
                           >
-                            <Eye size={18} className="text-gray-600" />
+                            <Eye size={18} className="text-blue-600" />
                           </button>
                           {user.isActive ? (
                             <button
-                              onClick={() => handleBanUser(user.id)}
+                              onClick={(e) => handleBanUser(user.id, e)}
                               className="p-2 hover:bg-red-50 rounded-lg transition-colors"
                               title="Khóa"
                             >
@@ -295,7 +315,7 @@ export default function Users() {
                             </button>
                           ) : (
                             <button
-                              onClick={() => handleUnbanUser(user.id)}
+                              onClick={(e) => handleUnbanUser(user.id, e)}
                               className="p-2 hover:bg-green-50 rounded-lg transition-colors"
                               title="Mở khóa"
                             >
@@ -310,6 +330,70 @@ export default function Users() {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          {!loading && !error && filteredUsers.length > 0 && (
+            <div className="mt-6 flex items-center justify-between border-t border-gray-200 pt-4">
+              <div className="text-sm text-gray-600">
+                Hiển thị <span className="font-medium">{startIndex + 1}</span> đến{' '}
+                <span className="font-medium">{Math.min(endIndex, filteredUsers.length)}</span> trong tổng số{' '}
+                <span className="font-medium">{filteredUsers.length}</span> người dùng
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="p-2 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-50"
+                >
+                  <ChevronLeft size={20} className="text-blue-600" />
+                </button>
+
+                <div className="flex gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                    // Hiển thị trang đầu, trang cuối, và các trang xung quanh trang hiện tại
+                    if (
+                      page === 1 ||
+                      page === totalPages ||
+                      (page >= currentPage - 1 && page <= currentPage + 1)
+                    ) {
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`min-w-[40px] px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            currentPage === page
+                              ? 'bg-blue-600 text-white shadow-md'
+                              : 'border border-blue-200 bg-blue-50 text-gray-700 hover:bg-blue-100'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      );
+                    } else if (
+                      page === currentPage - 2 ||
+                      page === currentPage + 2
+                    ) {
+                      return (
+                        <span key={page} className="px-2 py-2 text-gray-500">
+                          ...
+                        </span>
+                      );
+                    }
+                    return null;
+                  })}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="p-2 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-50"
+                >
+                  <ChevronRight size={20} className="text-blue-600" />
+                </button>
+              </div>
+            </div>
+          )}
           </>
           )}
         </div>
@@ -317,8 +401,8 @@ export default function Users() {
 
       {selectedUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-lg w-full max-h-[85vh] overflow-y-auto shadow-xl">
-            <div className="p-4 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white z-10">
+          <div className="bg-white rounded-xl max-w-lg w-full max-h-[85vh] overflow-y-auto shadow-xl border-2 border-blue-100">
+            <div className="p-4 border-b border-blue-100 flex items-center justify-between sticky top-0 bg-gradient-to-r from-blue-50 to-white z-10">
               <h3 className="text-lg font-bold text-gray-900">Chi tiết người dùng</h3>
               <div className="flex items-center gap-2">
                 <button
@@ -367,28 +451,28 @@ export default function Users() {
               <div className="space-y-3">
                 <h5 className="text-sm font-semibold text-gray-900">Thông tin cá nhân</h5>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-gray-50 p-3 rounded-lg">
+                  <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
                     <p className="text-xs text-gray-600 mb-1">Vai trò</p>
                     <p className="text-sm font-semibold text-gray-900">{getRoleBadge(selectedUser.role)}</p>
                   </div>
-                  <div className="bg-gray-50 p-3 rounded-lg">
+                  <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
                     <p className="text-xs text-gray-600 mb-1">Trạng thái</p>
                     <p className="text-sm font-semibold text-gray-900">{selectedUser.isActive ? 'Hoạt động' : 'Bị khóa'}</p>
                   </div>
-                  <div className="bg-gray-50 p-3 rounded-lg">
+                  <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
                     <p className="text-xs text-gray-600 mb-1">Tên hiển thị</p>
                     <p className="text-sm font-semibold text-gray-900">{selectedUser.displayName || <span className="text-gray-400 italic">Chưa có</span>}</p>
                   </div>
-                  <div className="bg-gray-50 p-3 rounded-lg">
+                  <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
                     <p className="text-xs text-gray-600 mb-1">Số điện thoại</p>
                     <p className="text-sm font-semibold text-gray-900">{selectedUser.phone || 'N/A'}</p>
                   </div>
-                  <div className="bg-gray-50 p-3 rounded-lg col-span-2">
+                  <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 col-span-2">
                     <p className="text-xs text-gray-600 mb-1">Địa chỉ</p>
                     <p className="text-sm font-semibold text-gray-900">{selectedUser.address || 'N/A'}</p>
                   </div>
                   {selectedUser.bio && (
-                    <div className="bg-gray-50 p-3 rounded-lg col-span-2">
+                    <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 col-span-2">
                       <p className="text-xs text-gray-600 mb-1">Giới thiệu bản thân</p>
                       <p className="text-sm text-gray-900 whitespace-pre-wrap">{selectedUser.bio}</p>
                     </div>
@@ -402,8 +486,8 @@ export default function Users() {
 
       {editingUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl border-2 border-blue-100">
+            <div className="p-6 border-b border-blue-100 bg-gradient-to-r from-blue-50 to-white">
               <h3 className="text-xl font-bold text-gray-900">Chỉnh sửa người dùng</h3>
             </div>
             <form onSubmit={(e) => {
@@ -426,7 +510,7 @@ export default function Users() {
                     type="text"
                     name="fullName"
                     defaultValue={editingUser.fullName}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border border-blue-200 bg-blue-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors"
                     required
                   />
                 </div>
@@ -438,7 +522,7 @@ export default function Users() {
                     name="displayName"
                     defaultValue={editingUser.displayName || ''}
                     placeholder="Nhập tên hiển thị"
-                    className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border border-blue-200 bg-blue-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors"
                   />
                 </div>
 
@@ -449,7 +533,7 @@ export default function Users() {
                     name="phone"
                     defaultValue={editingUser.phone || ''}
                     placeholder="Nhập số điện thoại"
-                    className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border border-blue-200 bg-blue-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors"
                     required
                   />
                 </div>
@@ -461,7 +545,7 @@ export default function Users() {
                     name="avatarUrl"
                     defaultValue={editingUser.avatarUrl || ''}
                     placeholder="https://example.com/avatar.jpg"
-                    className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border border-blue-200 bg-blue-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors"
                   />
                   <p className="text-xs text-gray-500 mt-1">Nhập đường dẫn URL đến ảnh đại diện</p>
                 </div>
@@ -473,7 +557,7 @@ export default function Users() {
                     name="address"
                     defaultValue={editingUser.address || ''}
                     placeholder="Nhập địa chỉ"
-                    className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border border-blue-200 bg-blue-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors"
                     required
                   />
                 </div>
@@ -485,11 +569,11 @@ export default function Users() {
                     defaultValue={editingUser.bio || ''}
                     placeholder="Nhập giới thiệu về bản thân"
                     rows={4}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border border-blue-200 bg-blue-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors"
                   />
                 </div>
 
-                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                <div className="bg-blue-50 p-4 rounded-xl border border-blue-200">
                   <p className="text-sm font-medium text-gray-700 mb-2">Thông tin chỉ xem</p>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -512,17 +596,17 @@ export default function Users() {
                 </div>
               </div>
 
-              <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
+              <div className="p-6 border-t border-blue-100 flex justify-end gap-3 bg-gradient-to-r from-blue-50 to-white">
                 <button
                   type="button"
                   onClick={() => setEditingUser(null)}
-                  className="px-6 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors"
+                  className="px-6 py-2 bg-white border-2 border-blue-200 text-gray-700 rounded-xl hover:bg-blue-50 transition-colors"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+                  className="px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-md transition-all hover:shadow-lg"
                 >
                   Lưu thay đổi
                 </button>

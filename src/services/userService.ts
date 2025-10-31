@@ -8,6 +8,15 @@ import {
 
 class UserService {
   /**
+   * Lấy thông tin profile của user hiện tại
+   * GET /api/users/profile
+   */
+  async getProfile(): Promise<User> {
+    const response = await api.get<User>('/api/users/profile');
+    return response.data;
+  }
+
+  /**
    * Lấy danh sách người dùng
    * GET /api/users
    */

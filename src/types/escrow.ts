@@ -1,18 +1,38 @@
+export interface PaymentInfo {
+  provider: string;
+  paymentIntentId: string;
+  authorizedAt: string | null;
+  capturedAt: string | null;
+  refundedAt: string | null;
+}
+
+export interface EscrowEvent {
+  type: number;
+  at: string;
+  by: string | null;
+  description: string;
+  meta: any;
+}
+
 export interface Escrow {
   id: string;
   orderId: string;
+  productId: string;
   buyerId: string;
   sellerId: string;
-  amount: number;
-  status: 'held' | 'released' | 'refunded' | 'disputed';
+  status: 'HOLDING' | 'RELEASED' | 'REFUNDED' | 'DISPUTED';
+  amountTotal: number;
+  amountHold: number;
+  currency: string;
+  payment: PaymentInfo;
+  events: EscrowEvent[];
   createdAt: string;
   updatedAt: string;
-  releaseDate?: string;
-  notes?: string;
 }
 
 export interface EscrowResponse {
+  success: boolean;
   data: Escrow[];
-  total: number;
+  count: number;
 }
 

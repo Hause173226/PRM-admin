@@ -4,18 +4,19 @@ import { Lock, Mail } from 'lucide-react';
 import authService from '../services/authService';
 import { AxiosError } from 'axios';
 import { ApiError } from '../types/auth';
+import Toast, { ToastType } from '../components/Toast';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setToast(null);
     setLoading(true);
 
     try {
@@ -25,24 +26,35 @@ export default function Login() {
         password,
       });
 
-      // Đăng nhập thành công, chuyển hướng đến dashboard
-      navigate('/dashboard');
+      // Đăng nhập thành công, hiển thị toast
+      setToast({ message: 'Đăng nhập thành công!', type: 'success' });
+      
+      // Chuyển hướng đến dashboard sau 1 giây
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1000);
     } catch (err) {
       // Xử lý lỗi
       const axiosError = err as AxiosError<ApiError>;
       if (axiosError.response?.data?.message) {
-        setError(axiosError.response.data.message);
+        setToast({ message: axiosError.response.data.message, type: 'error' });
       } else {
-        setError('Đăng nhập thất bại. Vui lòng thử lại!');
+        setToast({ message: 'Đăng nhập thất bại. Vui lòng thử lại!', type: 'error' });
       }
-      console.error('Login error:', err);
-    } finally {
       setLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+      
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex w-16 h-16 bg-blue-600 rounded-2xl items-center justify-center mb-4">
@@ -53,11 +65,6 @@ export default function Login() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-              {error}
-            </div>
-          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>

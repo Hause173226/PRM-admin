@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Layout from '../components/Layout';
 import { Download, TrendingUp } from 'lucide-react';
-import toast, { Toaster } from 'react-hot-toast';
+import Toast, { ToastType } from '../components/Toast';
 
 type TimeFilter = '7days' | '30days' | 'year';
 type ExportFormat = 'csv' | 'pdf';
@@ -9,6 +9,7 @@ type ExportFormat = 'csv' | 'pdf';
 export default function Reports() {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('30days');
   const [showExportModal, setShowExportModal] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
@@ -19,7 +20,7 @@ export default function Reports() {
   };
 
   const handleExport = (format: ExportFormat) => {
-    toast.success(`Đang xuất báo cáo định dạng ${format.toUpperCase()}...`);
+    setToast({ message: `Đang xuất báo cáo định dạng ${format.toUpperCase()}...`, type: 'success' });
     setShowExportModal(false);
   };
 
@@ -32,31 +33,14 @@ export default function Reports() {
 
   return (
     <Layout>
-      <Toaster 
-        position="top-right"
-        toastOptions={{
-          duration: 3000,
-          style: {
-            background: '#fff',
-            color: '#363636',
-            padding: '16px',
-            borderRadius: '8px',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-          },
-          success: {
-            iconTheme: {
-              primary: '#10b981',
-              secondary: '#fff',
-            },
-          },
-          error: {
-            iconTheme: {
-              primary: '#ef4444',
-              secondary: '#fff',
-            },
-          },
-        }}
-      />
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+      
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
