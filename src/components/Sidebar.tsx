@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users,  Package, ShoppingCart} from 'lucide-react';
+import { LayoutDashboard, Users,  Package, ShoppingCart, Shield} from 'lucide-react';
 
 const menuItems = [
   { path: '/dashboard', icon: LayoutDashboard, label: 'Trang chủ' },
@@ -7,7 +7,7 @@ const menuItems = [
   // { path: '/listings', icon: FileText, label: 'Quản lý Tin đăng' },
   { path: '/products', icon: Package, label: 'Quản lý Sản phẩm' },
   { path: '/orders', icon: ShoppingCart, label: 'Quản lý Đơn hàng' },
-  // { path: '/escrows', icon: Shield, label: 'Quản lý Escrow' },
+  { path: '/escrows', icon: Shield, label: 'Quản lý Escrow' },
   // { path: '/chats', icon: MessageSquare, label: 'Quản lý Chat' },
   // { path: '/media', icon: Image, label: 'Quản lý Media' },
   // { path: '/transactions', icon: Receipt, label: 'Quản lý Giao dịch' },

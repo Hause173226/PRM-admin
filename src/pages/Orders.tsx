@@ -448,7 +448,6 @@ export default function Orders() {
                     <FileText size={28} />
                     Chi tiết đơn hàng
                   </h3>
-                  <p className="text-blue-100 text-sm mt-1 font-mono">#{selectedOrder.id}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <button
