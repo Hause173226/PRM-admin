@@ -14,9 +14,58 @@ export interface EscrowEvent {
   meta: any;
 }
 
+export interface UserInfo {
+  id: string;
+  email: string;
+  name: string;
+  phone: string;
+}
+
+export interface ProductInfo {
+  id: string;
+  name: string;
+  brand: string;
+  type: string;
+  capacity: string;
+  condition: string;
+  year: number;
+  price: number;
+  voltage: string;
+  cycleCount: number;
+  location: string;
+  warranty: string;
+  status: string;
+  images: string[];
+  description: string;
+  ownerId: string;
+}
+
+export interface TimelineEvent {
+  fromStatus: string;
+  toStatus: string;
+  updatedById: string;
+  updatedBy: string;
+  updatedAt: string;
+}
+
+export interface OrderInfo {
+  id: string;
+  product: ProductInfo;
+  shippingFee: number;
+  totalAmount: number;
+  paymentMethod: string;
+  shippingAddress: string;
+  notes: string;
+  status: string;
+  buyer: UserInfo;
+  seller: UserInfo;
+  timeline: TimelineEvent[];
+}
+
 export interface Escrow {
   id: string;
   orderId: string;
+  order?: OrderInfo;
   productId: string;
   buyerId: string;
   sellerId: string;

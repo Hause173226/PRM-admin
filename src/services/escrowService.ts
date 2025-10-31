@@ -18,6 +18,12 @@ export const escrowService = {
     const response = await api.get(`/api/escrows/${id}`);
     return response.data.data || response.data;
   },
+
+  // Release escrow
+  releaseEscrow: async (id: string, reason?: string): Promise<Escrow> => {
+    const response = await api.post(`/api/escrows/${id}/release`, { reason });
+    return response.data.data || response.data;
+  },
 };
 
 export default escrowService;

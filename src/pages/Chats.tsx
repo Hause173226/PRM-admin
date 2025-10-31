@@ -330,12 +330,12 @@ export default function Chats() {
               </div>
 
               <div className="flex gap-3 justify-end mt-6">
-                <button
+                {/* <button
                   onClick={() => setShowDetailModal(false)}
                   className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Đóng
-                </button>
+                </button> */}
               </div>
             </div>
           </div>
