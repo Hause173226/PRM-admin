@@ -8,10 +8,10 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   return (
-    <div className="min-h-screen bg-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <Sidebar />
       <Topbar />
-      <main className="ml-64 pt-16">
+      <main className="ml-64 pt-16 animate-fade-in">
         <div className="p-6">
           {children}
         </div>

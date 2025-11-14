@@ -19,21 +19,21 @@ export default function Sidebar() {
   const location = useLocation();
 
   return (
-    <aside className="w-64 bg-gradient-to-b from-blue-50 to-white border-r border-blue-100 min-h-screen fixed left-0 top-0 shadow-sm">
-      <div className="p-6 border-b border-gray-200">
+    <aside className="w-64 glass-effect border-r border-slate-200/50 min-h-screen fixed left-0 top-0 shadow-xl">
+      <div className="p-6 border-b border-slate-200/50">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-lg">EV</span>
+          <div className="w-12 h-12 bg-gradient-to-br from-primary-400 to-primary-600 rounded-2xl flex items-center justify-center shadow-lg">
+            <span className="text-white font-bold text-xl">EV</span>
           </div>
           <div>
-            <h1 className="font-semibold text-gray-900">EV Market</h1>
-            <p className="text-xs text-gray-600">Admin Portal</p>
+            <h1 className="font-bold text-gray-800">EV Market</h1>
+            <p className="text-xs text-gray-500">Admin Portal</p>
           </div>
         </div>
       </div>
 
       <nav className="p-4">
-        <ul className="space-y-1">
+        <ul className="space-y-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
@@ -42,14 +42,14 @@ export default function Sidebar() {
               <li key={item.path}>
                 <Link
                   to={item.path}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group ${
                     isActive
-                      ? 'bg-blue-500 text-white font-medium shadow-md'
-                      : 'text-gray-700 hover:bg-blue-100 hover:text-blue-700'
+                      ? 'bg-gradient-to-r from-primary-400 to-primary-500 text-white font-medium shadow-lg shadow-primary-200'
+                      : 'text-gray-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-blue-50 hover:text-primary-700 hover:shadow-md'
                   }`}
                 >
-                  <Icon size={20} />
-                  <span>{item.label}</span>
+                  <Icon size={20} className={`${isActive ? '' : 'group-hover:scale-110'} transition-transform duration-300`} />
+                  <span className="text-sm">{item.label}</span>
                 </Link>
               </li>
             );
